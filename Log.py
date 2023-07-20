@@ -92,7 +92,7 @@ class Log:
             # print(alarm)
         if not counter:
             print(
-                "|                         NO CURRENT ALARMS!                          |"
+                "|                                NO CURRENT ALARMS!                                  |"
             )
         print(
             "|________________________________|___________________________|_______________________|"

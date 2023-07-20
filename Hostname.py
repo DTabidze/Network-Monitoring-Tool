@@ -5,7 +5,9 @@ import ping3
 from datetime import datetime
 from Log import Log
 import colorama
+import requests
 from colorama import Fore
+import re
 
 DB_URL = "monitoring.db"
 
@@ -39,7 +41,42 @@ class Hostname:
         self.hostname = hostname
         self.type = type
 
+    @staticmethod
+    def is_hostname_valid_https(hostname):
+        if re.match(r"^https://", hostname):
+            return True
+        return False
+
+    @staticmethod
+    def is_hostname_valid_ip(hostname):
+        if re.match(r"^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$", hostname):
+            return True
+        return False
+
+    @staticmethod
+    def is_type_valid(type):
+        if re.fullmatch(r"^ICMP$", type) or re.fullmatch(r"^HTTPS$", type):
+            return True
+        return False
+
     def add_host(self, user):
+        print(self.hostname)
+        if not self.is_type_valid(self.type):
+            print("Check Type must be HTTPS or ICMP!!!")
+            return
+
+        # if not self.is_hostname_valid(self.hostname):
+        #     print("Hostname should start with https:// or it must be IP type!!!")
+        #     return
+
+        if self.type == "HTTPS":
+            if not self.is_hostname_valid_https(self.hostname):
+                print("Hostname must start with https://")
+                return
+        # elif not self.is_hostname_valid_ip(self.hostname):
+        #     print("IP syntax Error!!!")
+        #     return
+
         query = """
                     INSERT INTO hostnames(name,hostname,type,user_id) values(?,?,?,?);
                 """
@@ -106,6 +143,8 @@ class Hostname:
                 result = cursor.fetchone()
                 previous_status = result[0] if result else None
 
+                current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
                 # print(id, hostname, type)
                 if type == "ICMP":
                     try:
@@ -114,10 +153,6 @@ class Hostname:
                         if isinstance(response_time, (float, int)):
                             if previous_status == "OFFLINE" and previous_status != None:
                                 print(f"HOST {hostname} STATUS BECAME ONLINE")
-
-                            current_datetime = datetime.now().strftime(
-                                "%Y-%m-%d %H:%M:%S"
-                            )
                             cursor.execute(
                                 query,
                                 (
@@ -150,8 +185,48 @@ class Hostname:
                             query,
                             (id, current_datetime, "OFFLINE", None, previous_status),
                         )
-                else:
+                elif type != "HTTPS":
                     print(f"Unsupported type for {hostname}")
+                if type == "HTTPS":
+                    try:
+                        response = requests.get(hostname)
+                        print(response)
+                        # Check if the response status code is 200 (OK)
+                        if response.status_code == 200:
+                            print(f"The JSON server at {hostname} is UP.")
+                            print(
+                                f"Response time: {response.elapsed.total_seconds() * 1000:.2f} ms"
+                            )
+                            response_time_ms = response.elapsed.total_seconds() * 1000
+                            cursor.execute(
+                                query,
+                                (
+                                    id,
+                                    current_datetime,
+                                    "ONLINE",
+                                    "{:.4f}".format(response_time_ms),
+                                    previous_status,
+                                ),
+                            )
+
+                        else:
+                            cursor.execute(
+                                query,
+                                (
+                                    id,
+                                    current_datetime,
+                                    "OFFLINE",
+                                    None,
+                                    previous_status,
+                                ),
+                            )
+                            print(
+                                f"The JSON server at {hostname} is not responding. Status code: {response.status_code}"
+                            )
+                    except requests.exceptions.RequestException as e:
+                        print(
+                            f"Failed to connect to the JSON server at {hostname}. Exception: {e}"
+                        )
                 conn.commit()
             # # Sleep for 60 seconds between checks
             conn.close()

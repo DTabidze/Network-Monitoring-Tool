@@ -3,6 +3,7 @@ from Hostname import Hostname
 from Log import Log
 import threading
 import time
+import re
 
 DB_URL = "monitoring.db"
 
@@ -49,6 +50,24 @@ class User:
         conn.close()
 
     def register(self):
+        if not self.is_valid_fullname(self.fullname):
+            print("Invalid full name. Full name should contain at least 3 characters.")
+            return
+
+        if not self.is_valid_email(self.email):
+            print("Invalid email address.")
+            return
+
+        if not self.is_valid_username(self.username):
+            print(
+                "Invalid username. Username should contain at least 4 characters and can include numbers, underscores, and alphabets."
+            )
+            return
+
+        if not self.is_valid_password(self.password):
+            print("Invalid password. Password should contain at least 6 characters.")
+            return
+
         query = """
                     INSERT INTO users(fullname,email,username,password) values(?,?,?,?);
                 """
@@ -58,15 +77,23 @@ class User:
         self.id = cursor.lastrowid
         conn.commit()
         conn.close
+        print("Succesfull Registration!")
 
-    def add_hostname(self):
-        pass
+    @staticmethod
+    def is_valid_fullname(fullname):
+        return re.match(r"^[A-Za-z ]{3,}$", fullname)
 
-    def del_hostname(self):
-        pass
+    @staticmethod
+    def is_valid_email(email):
+        return re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email)
 
-    def get_hostnames(self):
-        pass
+    @staticmethod
+    def is_valid_username(username):
+        return re.match(r"^[A-Za-z0-9_]{4,}$", username)
+
+    @staticmethod
+    def is_valid_password(password):
+        return re.match(r"^.{6,}$", password)
 
 
 User.create_table()
@@ -85,8 +112,7 @@ while True:
         print(fullname, email, username, password)
         user = User(fullname, email, username, password)
         user.register()
-        print("Succesfull Registration!")
-    else:
+    if choice == "1":
         username = input("Username: ")
         password = input("Password: ")
         user = User.login(username, password)
@@ -114,7 +140,7 @@ while True:
                     # Perform action to add host
                     name = input("Enter the name of the host: ")
                     hostname = input("Enter the hostname: ")
-                    type = input("Enter the type of the host: ")
+                    type = input("Enter the type of the host(ICMP or HTTPS): ")
                     host = Hostname(name, hostname, type)
                     host.add_host(user)
                     # Call the add_host method of the Hostname class with the provided details
