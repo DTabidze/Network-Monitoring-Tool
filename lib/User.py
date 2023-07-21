@@ -1,8 +1,6 @@
 import sqlite3
 from Hostname import Hostname
 from Log import Log
-import threading
-import time
 import re
 
 DB_URL = "monitoring.db"
@@ -160,9 +158,27 @@ while True:
                 elif option == "5":
                     while True:
                         host_name = input("Enter Host's Name: ")
-                        history_log_range = input("Display Log History: ")
-                        Hostname.select_host(user, host_name)
+                        history_log_range = input(
+                            "Display Log History(Amount of Logs): "
+                        )
+                        # history_log_range = int(history_log_range)
+                        # if isinstance(history_log_range, int):
+                        #     Hostname.select_host(user, host_name, history_log_range)
+                        #     break
+                        # else:
+                        #     print("Amount of logs must be a number!!!")
+                        # if host_name.lower() == "q":
+                        Hostname.select_host(user, host_name, history_log_range)
                         break
+                        # starting_date = input(
+                        #     "Enter Starting Date:(Format YYYY-MM-DD HH:MM:SS) "
+                        # )
+                        # ending_date = input(
+                        #     "Enter Ending Date:(Format YYYY-MM-DD HH:MM:SS)"
+                        # )
+                        # Hostname.select_host(
+                        #     user, host_name, starting_date, ending_date
+                        # )
                 elif option == "6":
                     Log.display_current_alarms(user)
                     pass

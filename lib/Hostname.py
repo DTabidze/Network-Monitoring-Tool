@@ -60,7 +60,7 @@ class Hostname:
         return False
 
     def add_host(self, user):
-        print(self.hostname)
+        # print(self.hostname)
         if not self.is_type_valid(self.type):
             print("Check Type must be HTTPS or ICMP!!!")
             return
@@ -152,7 +152,8 @@ class Hostname:
                         # print(response_time)
                         if isinstance(response_time, (float, int)):
                             if previous_status == "OFFLINE" and previous_status != None:
-                                print(f"HOST {hostname} STATUS BECAME ONLINE")
+                                print("\n")
+                                print(f"HOST {hostname} STATUS BECAME ONLINE\n")
                             cursor.execute(
                                 query,
                                 (
@@ -165,7 +166,8 @@ class Hostname:
                             )
                         else:
                             if previous_status != "OFFLINE" and previous_status != None:
-                                print(f"HOST {hostname} WENT DOWN!!!")
+                                print("\n")
+                                print(f"HOST {hostname} WENT DOWN!!!\n")
                             cursor.execute(
                                 query,
                                 (
@@ -180,20 +182,20 @@ class Hostname:
                     except OSError as e:
                         # print(f"Error pinging host: {hostname} - {str(e)}")
                         if previous_status != "OFFLINE" and previous_status is not None:
-                            print(f"HOST {hostname} WENT DOWN!!!")
+                            print(f"HOST {hostname} WENT DOWN!!!\n")
                         cursor.execute(
                             query,
                             (id, current_datetime, "OFFLINE", None, previous_status),
                         )
                 elif type != "HTTPS":
-                    print(f"Unsupported type for {hostname}")
+                    print(f"Unsupported type for {hostname}\n")
                 if type == "HTTPS":
                     try:
                         response = requests.get(hostname)
                         print(response)
                         # Check if the response status code is 200 (OK)
                         if response.status_code == 200:
-                            print(f"The JSON server at {hostname} is UP.")
+                            print(f"The JSON/HTTPS server at {hostname} is UP.\n")
                             print(
                                 f"Response time: {response.elapsed.total_seconds() * 1000:.2f} ms"
                             )
@@ -221,11 +223,11 @@ class Hostname:
                                 ),
                             )
                             print(
-                                f"The JSON server at {hostname} is not responding. Status code: {response.status_code}"
+                                f"The HTTPS/JSON server at {hostname} is not responding. Status code: {response.status_code}"
                             )
                     except requests.exceptions.RequestException as e:
                         print(
-                            f"Failed to connect to the JSON server at {hostname}. Exception: {e}"
+                            f"Failed to connect to the HTTPS/JSON server at {hostname}. Exception: {e}\n"
                         )
                 conn.commit()
             # # Sleep for 60 seconds between checks
@@ -245,7 +247,7 @@ class Hostname:
     #     cls.running_thread = False
 
     @classmethod
-    def select_host(cls, user, host_name):
+    def select_host(cls, user, host_name, history_log_range):
         query = """
                     SELECT * FROM hostnames WHERE hostnames.name == ? and hostnames.user_id == ?;
                 """
@@ -255,7 +257,7 @@ class Hostname:
         if result is None:
             print("Invalid Host Name!!!")
         else:
-            Log.display_logs(result[0])
+            Log.display_logs(result[0], history_log_range)
 
     @classmethod
     def display_hosts(cls, user):
@@ -273,7 +275,7 @@ class Hostname:
             "|             Nname              |          Hostname         |  TYPE  |   Last Online Time  |  Last Offline Time  |"
         )
         print(
-            "|_________________________________________________________________________________________________________________|"
+            "|________________________________|___________________________|________|_____________________|_____________________|"
         )
         for host in hosts_results:
             query = """
@@ -328,5 +330,5 @@ class Hostname:
                 )
 
         print(
-            "|_________________________________________________________________________________________________________________|"
+            "|________________________________|___________________________|________|_____________________|_____________________|"
         )

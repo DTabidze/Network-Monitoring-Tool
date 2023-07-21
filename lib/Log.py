@@ -26,16 +26,17 @@ class Log:
         self.status = status
 
     @classmethod
-    def display_logs(self, host_name_id):
+    def display_logs(self, host_name_id, history_log_range):
         query = """
                     SELECT time, status, ms
                     FROM logs
                     WHERE hostname_id = ?
-                    ORDER BY time DESC;
+                    ORDER BY time DESC
+                    LIMIT ?;
                 """
         conn = sqlite3.connect(DB_URL)
         cursor = conn.cursor()
-        results = cursor.execute(query, (host_name_id,)).fetchall()
+        results = cursor.execute(query, (host_name_id, history_log_range)).fetchall()
         if results == None:
             print("No Logs for this Hostname")
         else:
